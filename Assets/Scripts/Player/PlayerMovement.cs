@@ -6,49 +6,42 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 5f; // velocidade de movimento do personagem
-    [SerializeField] private float rotationSpeed = 200f; // velocidade de rotação do personagem
-    [SerializeField] private bool allowBackwardsMovement = true; // indica se o personagem pode se mover para trás
+    [SerializeField] private float maxSpeed = 5f; // velocidade máxima
+    [SerializeField] private float acceleration = 10f; // aceleração
+    [SerializeField] private float deceleration = 10f; // desaceleração
+    [SerializeField] private float rotationSpeed = 180f; // velocidade de rotação
 
-    private Rigidbody2D rb2D; // referência ao componente Rigidbody2D
+    private Rigidbody2D rb;
 
-    void Start()
+    private float horizontalInput;
+    private float currentSpeed;
+
+    private void Awake()
     {
-        rb2D = GetComponent<Rigidbody2D>(); // obter referência ao componente Rigidbody2D
+        rb = GetComponent<Rigidbody2D>();
     }
 
-    void Update()
+    private void Update()
     {
-        // Obter entrada do usuário para mover o personagem para frente ou para trás
-        float moveInput = Input.GetAxisRaw("Vertical");
+        // Captura do Input
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+    }
 
-        // Verificar se o valor de entrada é maior do que zero (para mover para frente)
-        // ou menor do que zero (para mover para trás), dependendo da variável allowBackwardsMovement
-        if ((moveInput > 0f || (allowBackwardsMovement && moveInput < 0f)))
+    private void FixedUpdate()
+    {
+        // Rotacionar o jogador
+        transform.Rotate(Vector3.back * horizontalInput * rotationSpeed * Time.fixedDeltaTime);
+
+        // Calcular a velocidade atual
+        currentSpeed = Mathf.MoveTowards(currentSpeed, maxSpeed * Input.GetAxisRaw("Vertical"), acceleration * Time.fixedDeltaTime);
+
+        // Aplicar a velocidade ao rigidbody
+        rb.velocity = transform.up * currentSpeed;
+
+        // Desacelerar quando o jogador não está mais movendo
+        if (Input.GetAxisRaw("Vertical") == 0f)
         {
-            // Calcular a direção do movimento do personagem
-            Vector2 moveDirection = transform.up * moveInput;
-
-            // Obter entrada do usuário para rotacionar o personagem
-            float rotateInput = Input.GetAxisRaw("Horizontal");
-
-            // Rotacionar o personagem
-            transform.Rotate(Vector3.forward * -rotateInput * rotationSpeed * Time.deltaTime);
-
-            // Aplicar a velocidade de movimento ao personagem
-            rb2D.velocity = moveDirection * moveSpeed;
-        }
-        else
-        {
-            // Se o valor de entrada for zero ou não permitido, o personagem não se move
-            rb2D.velocity = Vector2.zero;
-
-            // Obter entrada do usuário para rotacionar o personagem
-            float rotateInput = Input.GetAxisRaw("Horizontal");
-
-            // Rotacionar o personagem
-            transform.Rotate(Vector3.forward * -rotateInput * rotationSpeed * Time.deltaTime);
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.fixedDeltaTime);
         }
     }
 }
-
